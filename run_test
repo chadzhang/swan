@@ -1,0 +1,2 @@
+#!/bin/sh
+ruby submit_bids_copy.rb
