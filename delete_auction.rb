@@ -25,7 +25,7 @@ class Submit_bids < Test::Unit::TestCase
       
       $real_server = "http://vip.bid.io"
       $local = "http://localhost:3000"
-      $target_server = $local #$real_server
+      $target_server = $real_server #$local
 
 	  $admin_mail = "c@bidiodev.com"
 	  $admin_pw = "a"

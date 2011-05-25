@@ -189,8 +189,11 @@ end
 
 module Browser_auctions
 
-  def join_auction(browser)
+  def join_auction(browser, auction_text)
     button_Im_in = "//input[@class='iamin_button']"
+    
+    goto_browse_auctions(browser)
+    click_contain_text(browser, auction_text)
     if browser.element?(button_Im_in)
 	  browser.click button_Im_in
 	  wait_for_text(browser,"Your Drop Out Price")
@@ -205,12 +208,6 @@ module Browser_auctions
     browser.type "bid_price", bid
     browser.click "place_bid_btn"
     bid = ts(bid.to_s)
-		#     if bid =~ /./
-		# 	  decimal_part = bid.split(".")[1].to_i
-		# 	  if decimal_part == 0
-		# bid = bid.split(".")[0]
-		# 	  end
-		#     end
     wait_for_text(browser,"$#{bid}")
     sleep rand
   end
@@ -303,6 +300,14 @@ module Dashborad
     }
     
     click(browser,"listing_submit")
+  end
+
+
+
+  def edit_slope(browser, amount = "", select_interver = "", fill_interval = "", )
+    browser.type "clock_auction_slope_amount_holder", amount if amount != ""
+    browser.select "slope_interval_selector", select_interval if select_interval != ""
+    browser.
   end
 
 end

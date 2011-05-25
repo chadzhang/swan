@@ -54,7 +54,7 @@ describe "test" do
 	    $local = "http://localhost:3000"
 	    $local_homepage = "http://localhost:3000/home"	
 	
-	    $target_server = $local #$real_server
+	    $target_server = $real_server #$local 
 	  end
 	
 	  it "User's info" do

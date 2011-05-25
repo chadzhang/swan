@@ -35,7 +35,7 @@ class Submit_bids < Test::Unit::TestCase
   $real_server = "http://vip.bid.io"
   $local = "http://localhost:3000"
   
-  $target_server = $local #$real_server
+  $target_server = $real_server #$local
 
   $auction_1 = "MacBook Air 11 inch"
   $auction_qty_1 = 1
@@ -129,8 +129,8 @@ class Submit_bids < Test::Unit::TestCase
       assert_equal(start_price, $auction_start_price_1)
       # assert_equal(@@page2.get_table("//tbody.0.3").to_i, $auction_qty_1)
       assert_equal(@@page2.get_value(bid_price_field).to_i, start_price)
-      assert_equal(@@page2.get_text("css=div.min_price").to_i, start_price+1)
-      assert_equal(@@page2.get_text("max_price").to_i, 10*start_price)
+      assert_equal(@@page2.get_text("css=div.min_price"), "$#{start_price+1}")
+      assert_equal(@@page2.get_text("max_price"), "$#{10*start_price}")
       assert @@page2.element?(set_price)
       assert @@page2.is_editable(set_price)
       
@@ -154,10 +154,6 @@ class Submit_bids < Test::Unit::TestCase
       first_row.each { |k, v| assert_equal(@@page.get_table("//tbody.0.#{k}"), v) }
       
       for bid in invalid_bid
-        # @@page2.type bid_price_field, bid
-        # @@page2.click "place_bid_btn"
-        # bidio.wait_for_text(@@page2,"Invalid price.")
-        # sleep 1
         bidio.placed_invalid_bid(@@page2, bid)
         assert_equal(@@page2.get_value(bid_price_field), bid)
         assert_equal(@@page2.get_text("bid_price_error"), "Invalid price.")
@@ -255,9 +251,7 @@ class Submit_bids < Test::Unit::TestCase
     
     for user in $users
       bidio.sign_in(@@page2, user, "#{$test_pw}")
-      bidio.goto_browse_auctions(@@page2)
-      bidio.click_link(@@page2, $auction_3)
-      bidio.join_auction(@@page2)
+      bidio.join_auction(@@page2, $auction_3)
       bid = bidio.generate_bid(@@page2)
       bidio.placed_bid(@@page2, bid)
       if user =~ /b@/
@@ -327,11 +321,6 @@ class Submit_bids < Test::Unit::TestCase
 	      valid_bid = [bid_min_max, valid_decimal_bid, bid_more_max]
 
 	      for bid in invalid_bid
-	        # @@page2.type bid_price_field, bid
-	        # @@page2.click "place_bid_btn"
-	        # assert_equal(@@page2.get_value(bid_price_field), bid)
-	        # bidio.wait_for_text(@@page2,"Invalid price.")
-	        # sleep rand
 	        bidio.placed_invalid_bid(@@page2, bid)
 	        assert_equal(@@page2.get_text("bid_price_error"), "Invalid price.")
 	        assert @@page2.text?("Your Drop Out Price is $#{first_price}")
@@ -368,10 +357,9 @@ class Submit_bids < Test::Unit::TestCase
 	        bid = bidio.ts(bid.to_s)
 	        bidio.wait_for_text(@@page2,"$#{bid}")
 	        sleep rand
-	        # bidio.placed_bid(@@page2,bid)
 	        assert @@page2.text?("Your Drop Out Price is $#{bid}")
 	        assert @@page2.text?("Bid submitted successfully!")
-	        sleep 10 # 10 seconds later,this msg should fade.
+	        sleep 10
 	        assert !@@page2.text?("Bid submitted successfully!")
 
 	        bidio.refresh_page(@@page)
@@ -389,9 +377,11 @@ class Submit_bids < Test::Unit::TestCase
 	end
   end
   
-  # def test_e_
-  # 
-  # end
+  def test_e_slider_show_in_correct_place
+    bidio = Bidio.new
+
+
+  end
   # 
   # def test_f_
   # 
