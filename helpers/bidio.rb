@@ -304,10 +304,10 @@ module Dashborad
 
 
 
-  def edit_slope(browser, amount = "", select_interver = "", fill_interval = "", )
+  def edit_slope(browser, amount = "", select_interver = "", fill_interval = "")
     browser.type "clock_auction_slope_amount_holder", amount if amount != ""
     browser.select "slope_interval_selector", select_interval if select_interval != ""
-    browser.
+
   end
 
 end
