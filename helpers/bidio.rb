@@ -4,8 +4,10 @@ gem "selenium-client"
 require "selenium/client"
 
 
-module General
-  
+
+
+module Helper
+
   def create_selenium_browser(opts={})
     Selenium::Client::Driver.new({
         :host => 'localhost',
@@ -53,6 +55,44 @@ module General
     browser.click "#{element}", :wait_for => :page
   end
 
+  def ts(st)
+    st = st.reverse
+    r = ""
+    max = if st[-1].chr == '-'
+      st.size - 1
+    else
+      st.size
+    end
+    if st.to_i == st.to_f
+      1.upto(st.size) {|i| r << st[i-1].chr ; r << ',' if i%3 == 0 and i < max}
+    else
+      start = nil
+      1.upto(st.size) {|i|
+        r << st[i-1].chr
+        start = 0 if r[-1].chr == '.' and not start
+        if start
+          r << ',' if start % 3 == 0 and start != 0  and i < max
+          start += 1
+        end
+      }
+    end
+    r.reverse
+  end
+
+end
+
+
+
+
+
+
+
+
+
+module General
+  
+
+
   def access_private_alpha(browser)
     click_link(browser,"access the private alpha")
   end
@@ -86,69 +126,6 @@ module General
     browser.click "allow", :wait_for => :page
   end
   
-  def create_auction_step_1(browser,title,description)
-    goto_dashboard(browser)
-    click(browser,"//input[@value='Sell Item']")
-    browser.type "listing_title", title 
-    browser.type "listing_desc", description
-                                                        
-    click(browser,"listing_submit")
-  end
-
-  def create_auction_step_2(browser, radio_button, start_price = "", start_time = "", qty = "", reserve_price = "", duration = "")
-	clock_radio = "auction_type_ClockAuction"
-	eproxy_radio = "auction_type_EproxAuction"  
-	    
-	auciton_type = radio_button.gsub(/ Auction/,"").downcase
-	time_field = "#{auciton_type}_auction_clock_start_time_date"              
-	start_price_field = "#{auciton_type}_auction_start_price_holder" 
-	
-	if radio_button =~ /Clock/ 
-	  browser.type "clock_auction_supply", qty if qty != ""       	
-	else
-	  browser.check eprox_radio  
-	  browser.type "eprox_auction_reserve_price_holder", reserve_price if reserve_price != ""
-	  browser.type "eprox_auction_duration", duration if duration != ""
-	end
-	
-	browser.type start_price_field, start_price if start_price != ""
-	browser.type time_field, start_time if start_time != ""    
-	
-	click(browser,"auction_submit")
-	click_link(browser,"Continue") if browser.element?("link=Continue")
-  end 
-	
-	#   def create_auction_step_2(browser, start_price = "", start_time = "", qty = "")
-	# time_field = "clock_auction_clock_start_time_date"              
-	#     start_price_field = "clock_auction_start_price_holder" 
-	# 
-	#    	browser.type "clock_auction_supply", qty if qty != ""       	
-	# browser.type start_price_field, start_price if start_price != ""
-	#     browser.type time_field, start_time if start_time != ""    
-	# 
-	#     click(browser,"auction_submit")
-	#     click_link(browser,"Continue") if browser.element?("link=Continue")
-	#   end
-
-
-  def edit_clock_auction(browser, title = "", start_time = "", start_price = "", qty = "")
-    listing_edit = {
-	  "listing_title" => title,
-	  "listing_desc" => description,
-	  "auction_clock_start_time_date" => start_time,
-	  "auction_start_price_holder" => start_price,
-	  "auction_supply" => qty
-    }
-    
-    listing_edit.each { |v, k|
-	  browser.type v, k if v != ""
-    }
-    
-    click(browser,"listing_submit")
-  end
-
-
-  
   def login_sina_mail(browser,username,password)
     browser.type "//input[@class='input_text'][@name='username']", username
     browser.type "//input[@class='input_text'][@name='password']", password
@@ -163,86 +140,16 @@ module General
     browser.wait_for_condition("selenium.isTextPresent(\"support@bid.io\")","30000")
   end
 
-
-  def join_auction(browser)
-    button_Im_in = "//input[@class='iamin_button']"
-    if browser.element?(button_Im_in)
-	  browser.click button_Im_in
-	  wait_for_text(browser,"Your Drop Out Price")
-	  sleep 1
-	else
-	  puts "\nMaybe yuou already join this Auction!\n"
-	end
-  end
-
-  
-  def placed_bid(browser,bid)
-    browser.type "bid_price", bid
-    browser.click "place_bid_btn"
-    bid = ts(bid.to_s)
-    if bid =~ /./
-	  decimal_part = bid.split(".")[1].to_i
-	  if decimal_part == 0
-		bid = bid.split(".")[0]
-	  end
-    end
-    wait_for_text(browser,"$#{bid}")
-    sleep 1
-  end
-
-
-  def delete_public_auction(browser,text)
-    goto_dashboard(browser)
-    click_contain_text(browser,text)
-    click_link(browser,"See bid details")
-    click_link(browser,"Delete this auction.")
-    browser.get_confirmation()
-  end
-
-
-  def ts(st)
-    st = st.reverse
-    r = ""
-    max = if st[-1].chr == '-'
-      st.size - 1
-    else
-      st.size
-    end
-    if st.to_i == st.to_f
-      1.upto(st.size) {|i| r << st[i-1].chr ; r << ',' if i%3 == 0 and i < max}
-    else
-      start = nil
-      1.upto(st.size) {|i|
-        r << st[i-1].chr
-        start = 0 if r[-1].chr == '.' and not start
-        if start
-          r << ',' if start % 3 == 0 and start != 0  and i < max
-          start += 1
-        end
-      }
-    end
-    r.reverse
-  end
-
-
   def generate_bid(browser)
     start_price = browser.get_table("//tbody.0.1").delete("$")
-    puts "1.start_price is : #{start_price}\n"
     if start_price =~ /,/
-	  puts "21)start_price is : #{start_price}\n"
 	  start_price = start_price.delete(",").to_i
-	  puts "22)start_price is : #{start_price}\n"
 	else
-	  puts "31)start_price is : #{start_price}\n"
 	  start_price = start_price.to_i
-	  puts "32)start_price is : #{start_price}\n"
     end
     bid_min_max = start_price+rand(10*start_price-start_price)
-    puts "\nbid_min_max is : #{bid_min_max}\n"
     return bid_min_max
   end
-
-
  
 end
 
@@ -279,6 +186,149 @@ end
 
 
 
+
+module Browser_auctions
+
+  def join_auction(browser)
+    button_Im_in = "//input[@class='iamin_button']"
+    if browser.element?(button_Im_in)
+	  browser.click button_Im_in
+	  wait_for_text(browser,"Your Drop Out Price")
+	  sleep 1
+	else
+	  puts "\nMaybe yuou already join this Auction!\n"
+	end
+  end
+
+  
+  def placed_bid(browser,bid)
+    browser.type "bid_price", bid
+    browser.click "place_bid_btn"
+    bid = ts(bid.to_s)
+		#     if bid =~ /./
+		# 	  decimal_part = bid.split(".")[1].to_i
+		# 	  if decimal_part == 0
+		# bid = bid.split(".")[0]
+		# 	  end
+		#     end
+    wait_for_text(browser,"$#{bid}")
+    sleep rand
+  end
+
+  def placed_invalid_bid(browser, bid)
+    browser.type "bid_price", bid
+    browser.click "place_bid_btn"
+    wait_for_text(browser,"Invalid price.")
+    sleep rand
+  end
+
+
+
+end
+
+
+
+
+
+
+
+
+module Dashborad
+
+  def delete_public_auction(browser,text)
+    goto_dashboard(browser)
+    click_contain_text(browser,text)
+    click_link(browser,"See bid details")
+    click_link(browser,"Delete this auction.")
+    browser.get_confirmation()
+  end
+
+
+  def create_auction_step_1(browser,title,description)
+    goto_dashboard(browser)
+    click(browser,"//input[@value='Sell Item']")
+    browser.type "listing_title", title 
+    browser.type "listing_desc", description
+                                                        
+    click(browser,"listing_submit")
+  end
+
+  def create_auction_step_2(browser, radio_button, start_price = "", start_time = "", qty = "", reserve_price = "", duration = "")
+	clock_radio = "auction_type_ClockAuction"
+	eproxy_radio = "auction_type_EproxAuction"  
+	    
+	auciton_type = radio_button.gsub(/ Auction/,"").downcase
+	time_field = "#{auciton_type}_auction_clock_start_time_date"              
+	start_price_field = "#{auciton_type}_auction_start_price_holder" 
+	
+	if radio_button =~ /Clock/ 
+	  browser.type "clock_auction_supply", qty if qty != ""       	
+	else
+	  browser.check eprox_radio  
+	  browser.type "eprox_auction_reserve_price_holder", reserve_price if reserve_price != ""
+	  browser.type "eprox_auction_duration", duration if duration != ""
+	end
+	
+	browser.type start_price_field, start_price if start_price != ""
+	browser.type time_field, start_time if start_time != ""    
+	
+	click(browser,"auction_submit")
+	# click_link(browser,"Continue") if browser.element?("link=Continue")
+  end 
+	
+	#   def create_auction_step_2(browser, start_price = "", start_time = "", qty = "")
+	# time_field = "clock_auction_clock_start_time_date"              
+	#     start_price_field = "clock_auction_start_price_holder" 
+	# 
+	#    	browser.type "clock_auction_supply", qty if qty != ""       	
+	# browser.type start_price_field, start_price if start_price != ""
+	#     browser.type time_field, start_time if start_time != ""    
+	# 
+	#     click(browser,"auction_submit")
+	#     click_link(browser,"Continue") if browser.element?("link=Continue")
+	#   end
+
+
+  def edit_clock_auction(browser, title = "", start_time = "", start_price = "", qty = "")
+    listing_edit = {
+	  "listing_title" => title,
+	  "listing_desc" => description,
+	  "auction_clock_start_time_date" => start_time,
+	  "auction_start_price_holder" => start_price,
+	  "auction_supply" => qty
+    }
+    
+    listing_edit.each { |v, k|
+	  browser.type v, k if v != ""
+    }
+    
+    click(browser,"listing_submit")
+  end
+
+end
+
+
+
+
+
+
+module My_auctions
+
+
+
+
+end
+
+
+
+
+
+
+
+
+
+
+
 module Admin
   
   def invite_seller(browser,email)
@@ -298,11 +348,13 @@ end
 
 class Bidio
   
-  # include Search
+  include Helper
   include Flow_page
   include Admin
   include General
-  
+  include Browser_auctions
+  include Dashborad
+  include My_auctions
   
 end
 

@@ -236,9 +236,9 @@ describe "test" do
 		text.each { |text| page.text?(text).should be_true}
 		
 		page.get_table("//tbody.0.1").should eql("$#{$clock_sp}")
-		page.get_table("//tbody.0.3").should eql($clock_qty)
+		# page.get_table("//tbody.0.3").should eql($clock_qty)
 		
-		table_second_row = { "0" => "Bidding Period", "1" => "Start Price", "2" =>"Increase Rate", "3" => "Qty"}
+		table_second_row = { "0" => "Bidding Period", "1" => "Start Price", "2" =>"Increase Rate"}
 		table_second_row.each { |k, v| 
 		   page.get_table("//tbody.1.#{k}").should eql(v)
 		}

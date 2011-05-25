@@ -46,7 +46,7 @@ class Submit_bids < Test::Unit::TestCase
   $auction_3 = "30-inch Cinema HD"
   $auction_qty_3 = 1
   $auction_start_price_3 = 1299
-  $auctions = [$auction_1, $auction_2, $auction_3]
+  # $auctions = [$auction_1, $auction_2, $auction_3]
   $auctions = [$auction_1, $auction_3]
   # $auctions = [$auction_1]
 
@@ -127,7 +127,7 @@ class Submit_bids < Test::Unit::TestCase
       
       start_price = @@page2.get_table("//tbody.0.1").delete("$").to_i
       assert_equal(start_price, $auction_start_price_1)
-      assert_equal(@@page2.get_table("//tbody.0.3").to_i, $auction_qty_1)
+      # assert_equal(@@page2.get_table("//tbody.0.3").to_i, $auction_qty_1)
       assert_equal(@@page2.get_value(bid_price_field).to_i, start_price)
       assert_equal(@@page2.get_text("css=div.min_price").to_i, start_price+1)
       assert_equal(@@page2.get_text("max_price").to_i, 10*start_price)
@@ -154,10 +154,11 @@ class Submit_bids < Test::Unit::TestCase
       first_row.each { |k, v| assert_equal(@@page.get_table("//tbody.0.#{k}"), v) }
       
       for bid in invalid_bid
-        @@page2.type bid_price_field, bid
-        @@page2.click "place_bid_btn"
-        bidio.wait_for_text(@@page2,"Invalid price.")
-        sleep 1
+        # @@page2.type bid_price_field, bid
+        # @@page2.click "place_bid_btn"
+        # bidio.wait_for_text(@@page2,"Invalid price.")
+        # sleep 1
+        bidio.placed_invalid_bid(@@page2, bid)
         assert_equal(@@page2.get_value(bid_price_field), bid)
         assert_equal(@@page2.get_text("bid_price_error"), "Invalid price.")
         assert @@page2.text?("Your Drop Out Price hasn't been set yet!")
@@ -169,7 +170,7 @@ class Submit_bids < Test::Unit::TestCase
 
       @@page2.type bid_price_field, bid_less_sp
       @@page2.click "place_bid_btn"
-      sleep 2
+      sleep rand
       assert_equal(@@page2.get_value(bid_price_field).to_i, bid_less_sp)
       assert @@page2.text?("Please bid at least $#{start_price}")
       assert @@page2.text?("Your Drop Out Price hasn't been set yet!")
@@ -180,12 +181,12 @@ class Submit_bids < Test::Unit::TestCase
 
       @@page2.type bid_price_field, invalid_decimal_bid
       @@page2.click "place_bid_btn"
-      sleep 2
+      sleep rand
       assert_equal(@@page2.get_value(bid_price_field).to_f, invalid_decimal_bid)
       assert @@page2.text?("Your Drop Out Price hasn't been set yet!")
       # assert @@page2.text?("") # Currently,the text is incorrct.
-      @@page.refresh()
-      bidio.page_load(@@page)
+
+      bidio.refresh_page(@@page)
       assert @@page.element?($bid_table)
       first_row.each { |k, v| assert_equal(@@page.get_table("//tbody.0.#{k}"), v) }
 
@@ -194,23 +195,21 @@ class Submit_bids < Test::Unit::TestCase
         if @@page2.get_text("bid_price_error") == ""
 	      previous_bid = @@page2.get_value("bid_price")
 	    end
-	    
+
         @@page2.type bid_price_field, bid
         @@page2.click "place_bid_btn"
         assert_equal(@@page2.get_value(bid_price_field).to_f, bid)
         bid = bidio.ts(bid.to_s)
         bidio.wait_for_text(@@page2,"$#{bid}")
-        sleep 1
+        sleep rand
         assert @@page2.text?("Your Drop Out Price is $#{bid}")
+        assert @@page2.text?("Bid submitted successfully!")
+        sleep 10 # 10 seconds later,this msg should fade.
+        assert !@@page2.text?("Bid submitted successfully!")
+        
 
         bidio.refresh_page(@@page)
         start_price = bidio.ts(start_price.to_s) if !(start_price =~ /,/)
-
-        decimal_part = start_price.split(".")[1].to_i
-        if decimal_part == 0
-	      start_price = start_price.split(".")[0]
-	    end   
-	
         assert @@page.element?($bid_table)
         for i in 0 .. 1
           assert_equal(@@page.get_table("//tbody.#{i}.0"), "#{name} (#{target_user})")
@@ -222,8 +221,6 @@ class Submit_bids < Test::Unit::TestCase
  		  assert_equal(@@page.get_table("//tbody.1.2"), "$#{start_price}")
         else
 	      previous_bid = bidio.ts(previous_bid.to_s)
-	      decimal_part = previous_bid.split(".")[1].to_i
-	      previous_bid = previous_bid.split(".")[0] if decimal_part == 0
 	      assert_equal(@@page.get_table("//tbody.1.2"), "$#{previous_bid}")
 	    end
 	
@@ -251,8 +248,10 @@ class Submit_bids < Test::Unit::TestCase
 
 
   
-  def test_d_seller_start_the_auction_and_submit_bids
+  def test_d_auction_start_and_submit_bids
     bidio = Bidio.new
+
+    bidio.sign_out(@@page2) if @@page2.element?("link=Sign Out")
     
     for user in $users
       bidio.sign_in(@@page2, user, "#{$test_pw}")
@@ -290,23 +289,14 @@ class Submit_bids < Test::Unit::TestCase
 		    target_user, name = $admin2, $admin2_name
 	        first_price = b_first_price
 	        first_price = bidio.ts(first_price.to_s)
-	        if first_price =~ /./ && first_price.split(".")[1].to_i == 0
-		      first_price = first_price.split(".")[0]
-		    end
 		  elsif user =~ /z@/
 		    target_user, name = $user1, $user1_name
 		    first_price = z_first_price
 		    first_price = bidio.ts(first_price.to_s)
-		    if first_price =~ /./ && first_price.split(".")[1].to_i == 0
-		      first_price = first_price.split(".")[0]
-		    end
 		  else
 			target_user, name = $seller1, $seller1_name
 			first_price = k_first_price
 			first_price = bidio.ts(first_price.to_s)
-			if first_price =~ /./ && first_price.split(".")[1].to_i == 0
-		      first_price = first_price.split(".")[0]
-		    end
 		  end
 		
 		puts "\nThe user is :#{user} and first price is : #{first_price} \n"
@@ -315,16 +305,10 @@ class Submit_bids < Test::Unit::TestCase
 	      bidio.goto_browse_auctions(@@page2)
 	      bidio.click_link(@@page2, $auction_3)
 
-	      assert !@@page2.element?(button_Im_in) # use visible if fail
-
-	      # start_price = @@page2.get_table("//tbody.0.1").delete("$")
+	      assert !@@page2.element?(button_Im_in) 
 	      start_price = $auction_start_price_3
-	      start_price = start_price.delete(",").to_i if start_price =~ /,/
+	      start_price_with_comma = bidio.ts(start_price.to_s)
 	      assert_equal(start_price, $auction_start_price_3)
-	      assert_equal(@@page2.get_table("//tbody.0.3").to_i, $auction_qty_3)
-	      # assert_equal(@@page2.get_value(bid_price_field).to_i, start_price)
-	      assert_equal(@@page2.get_text("css=div.min_price").to_i, start_price+1)
-	      assert_equal(@@page2.get_text("max_price").to_i, 10*start_price)
 	      assert @@page2.element?(set_price)
 	      assert @@page2.is_editable(set_price)
 
@@ -337,43 +321,41 @@ class Submit_bids < Test::Unit::TestCase
 		    start_price+rand(10*start_price-start_price)+(10000*a).floor/10000
 	      end
 	      bid_less_sp = rand(start_price)
-	      invalid_decimal_bid = start_price + (10000*rand).floor/10000
+	      invalid_decimal_bid = start_price + (10000*rand).floor/10000.0
 
 	      invalid_bid = ["rvfs", "@@!!", "457dgv","~123", "998j@#", "-#{bid_min_max}"]
 	      valid_bid = [bid_min_max, valid_decimal_bid, bid_more_max]
 
 	      for bid in invalid_bid
-	        @@page2.type bid_price_field, bid
-	        @@page2.click "place_bid_btn"
-	        bidio.wait_for_text(@@page2,"Invalid price.")
-	        sleep 1
-	        assert_equal(@@page2.get_value(bid_price_field), bid)
+	        # @@page2.type bid_price_field, bid
+	        # @@page2.click "place_bid_btn"
+	        # assert_equal(@@page2.get_value(bid_price_field), bid)
+	        # bidio.wait_for_text(@@page2,"Invalid price.")
+	        # sleep rand
+	        bidio.placed_invalid_bid(@@page2, bid)
 	        assert_equal(@@page2.get_text("bid_price_error"), "Invalid price.")
 	        assert @@page2.text?("Your Drop Out Price is $#{first_price}")
 	      end
 
 	      @@page2.type bid_price_field, bid_less_sp
 	      @@page2.click "place_bid_btn"
-	      sleep 2
+	      sleep rand
 	      assert_equal(@@page2.get_value(bid_price_field).to_i, bid_less_sp)
-	      assert @@page2.text?("Please bid at least $#{start_price}")
+	      assert @@page2.text?("Please bid at least $#{start_price_with_comma}")  # Probably a bug here!!!
 	      assert @@page2.text?("Your Drop Out Price is $#{first_price}")
+	
 	      bidio.refresh_page(@@page)
-
 	      assert @@page.element?($bid_table)
-	      first_row.each { |k, v| assert_equal(@@page.get_table("//tbody.0.#{k}"), v) }
 
 	      @@page2.type bid_price_field, invalid_decimal_bid
 	      @@page2.click "place_bid_btn"
-	      sleep 2
-	      assert_equal(@@page2.get_value(bid_price_field).to_f, invalid_decimal_bid)
+	      sleep 1
+	      assert_equal(@@page2.get_value(bid_price_field), invalid_decimal_bid.to_s)
 	      assert @@page2.text?("Your Drop Out Price is $#{first_price}")
-	      # assert @@page2.text?("") # Currently,the text is incorrct.
 
 	      bidio.refresh_page(@@page)
 	      assert @@page.element?($bid_table)
-	      first_row.each { |k, v| assert_equal(@@page.get_table("//tbody.0.#{k}"), v) }
-
+	
 	      for bid in valid_bid
 	        previous_bid = ""
 	        if @@page2.get_text("bid_price_error") == ""
@@ -382,38 +364,23 @@ class Submit_bids < Test::Unit::TestCase
 
 	        @@page2.type bid_price_field, bid
 	        @@page2.click "place_bid_btn"
-	        assert_equal(@@page2.get_value(bid_price_field).to_f, bid)
+	        assert_equal(@@page2.get_value(bid_price_field).to_i, bid)
 	        bid = bidio.ts(bid.to_s)
 	        bidio.wait_for_text(@@page2,"$#{bid}")
-	        sleep 1
+	        sleep rand
+	        # bidio.placed_bid(@@page2,bid)
 	        assert @@page2.text?("Your Drop Out Price is $#{bid}")
+	        assert @@page2.text?("Bid submitted successfully!")
+	        sleep 10 # 10 seconds later,this msg should fade.
+	        assert !@@page2.text?("Bid submitted successfully!")
 
 	        bidio.refresh_page(@@page)
 	        start_price = bidio.ts(start_price.to_s) if !(start_price =~ /,/)
-
-	        decimal_part = start_price.split(".")[1].to_i
-	        if decimal_part == 0
-		      start_price = start_price.split(".")[0]
-		    end   
-
 	        assert @@page.element?($bid_table)
-	        for i in 0 .. 1
-	          assert_equal(@@page.get_table("//tbody.#{i}.0"), "#{name} (#{target_user})")
-	          assert_equal(@@page.get_table("//tbody.#{i}.1"), "#{$phone}")
-	        end
-
+	        assert_equal(@@page.get_table("//tbody.0.0"), "#{name} (#{target_user})")
+	        assert_equal(@@page.get_table("//tbody.0.1"), "#{$phone}")
 	        assert_equal(@@page.get_table("//tbody.0.2"), "$#{bid}")
-		    if previous_bid == ""
-	 		  assert_equal(@@page.get_table("//tbody.1.2"), "$#{start_price}")
-	        else
-		      previous_bid = bidio.ts(previous_bid.to_s)
-		      decimal_part = previous_bid.split(".")[1].to_i
-		      previous_bid = previous_bid.split(".")[0] if decimal_part == 0
-		      assert_equal(@@page.get_table("//tbody.1.2"), "$#{previous_bid}")
-		    end
-
 		    assert_equal(@@page.get_table("//tbody.0.4"), "IN")
-		    assert_equal(@@page.get_table("//tbody.1.4"), "REPLACED")
 	      end
 
 	      bidio.sign_out(@@page2)
