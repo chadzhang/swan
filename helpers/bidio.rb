@@ -12,7 +12,7 @@ module Helper
     Selenium::Client::Driver.new({
         :host => 'localhost',
         :port => 4444,
-        :browser => "*chrome",
+        :browser => "*safari",
         :url => "http://192.168.1.4",
         :timeout_in_second => 60
     }.merge!(opts))
@@ -112,7 +112,7 @@ module General
   end
   
   def sign_in(browser,email,password)
-    click_link(browser,"Sign In")
+    #click_link(browser,"Sign In")
     browser.type "session_email", email
     browser.type "session_password", password
     
